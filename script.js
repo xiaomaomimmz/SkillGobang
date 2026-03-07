@@ -16,6 +16,7 @@ const playerJinengwu = document.getElementById('player-jinengwu');
 const modal = document.getElementById('modal');
 const bgm = document.getElementById('bgm');
 const bgmBtn = document.getElementById('bgm-btn');
+const fullscreenBtn = document.getElementById('fullscreen-btn');
 
 let isMusicPlaying = true; // 默认开启
 let taikulaCells = []; // 记录被泰裤辣冻结的坐标
@@ -45,7 +46,6 @@ function toggleMusic() {
         bgm.pause();
         bgmBtn.textContent = '🎵 开启音乐';
     } else {
-        // 方案二：动态变率播放，增加荒诞感并缓解听觉疲劳
         randomizeBgmRate();
         bgm.play().catch(e => console.log("等待用户交互以播放音乐", e));
         bgmBtn.textContent = '🔇 静音';
@@ -55,38 +55,32 @@ function toggleMusic() {
 
 function randomizeBgmRate() {
     if (bgm) {
-        // 扩大随机区间：0.5 (极深沉) 到 1.8 (极鬼畜)
         const newRate = 0.5 + Math.random() * 1.3;
         bgm.playbackRate = newRate;
         console.log(`🎬 戏剧提示：当前 BGM 进入 ${newRate < 1 ? '慢速压抑' : '鬼畜加速'} 模式 (${newRate.toFixed(2)}x)`);
     }
 }
 
-// 监听音乐循环事件，每次循环都换一个语速
 if (bgm) {
     bgm.addEventListener('timeupdate', () => {
-        // 由于 loop 属性在某些浏览器不触发 'ended'，我们手动检测接近末尾
         if (bgm.currentTime > bgm.duration - 0.2) {
-            // 即将循环，随机换速
-            // randomizeBgmRate(); // 暂时不在这里触发，防止过于混乱，保持每局或点击触发
+            // cycle rate if needed
         }
     });
 }
 
-// 自动尝试播放（处理浏览器限制）
 function autoPlayCheck() {
     if (bgm && isMusicPlaying) {
-        randomizeBgmRate(); // 启动时即随机
+        randomizeBgmRate();
         bgm.play().then(() => {
             bgmBtn.textContent = '🔇 静音';
         }).catch(() => {
-            console.log("Autoplay blocked, waiting for interaction.");
-            // 失败时保持状态为 true，直到第一次玩家落子或点击时再次触发
             bgmBtn.textContent = '🎵 开启音乐';
             isMusicPlaying = false;
         });
     }
 }
+
 function updateNarrator(text, type = 'system') {
     if (!narratorLog) return;
     const entry = document.createElement('div');
@@ -95,16 +89,13 @@ function updateNarrator(text, type = 'system') {
     let prefix = '🎙️ ';
     if (type === 'skill') {
         prefix = '🎭 ';
-        // 技能名哪里的颜色也用全局随机配色
         entry.style.color = 'var(--accent-color)';
         entry.style.fontWeight = 'bold';
     }
-    // 删除了原来的 "五：" 前缀以保持简洁
 
     entry.textContent = prefix + text;
     narratorLog.appendChild(entry);
 
-    // 强制实时显示最新内容
     requestAnimationFrame(() => {
         narratorLog.scrollTop = narratorLog.scrollHeight;
     });
@@ -127,18 +118,26 @@ const ALL_SKILLS = [
 // --- 初始化 ---
 function initGame() {
     console.log("初始化 15x15 剧场");
-    randomizeTheme(); // 每次开局随机配色
+    randomizeTheme();
     boardState = Array(boardHeight).fill(null).map(() => Array(boardWidth).fill(null));
     taikulaCells = [];
+    history = [];
     moveCounter = 0;
     renderBoard();
     updateNarrator("《技能五子棋》15x15 经典版开拍！", 'system');
     autoPlayCheck();
 }
 
+function resetGame() {
+    gameActive = true;
+    currentPlayer = 'black';
+    initGame();
+}
+
 function renderBoard() {
-    boardElement.style.gridTemplateColumns = `repeat(${boardWidth}, 40px)`;
-    boardElement.style.gridTemplateRows = `repeat(${boardHeight}, 40px)`;
+    const cellSize = getComputedStyle(document.documentElement).getPropertyValue('--cell-size').trim() || '40px';
+    boardElement.style.gridTemplateColumns = `repeat(${boardWidth}, ${cellSize})`;
+    boardElement.style.gridTemplateRows = `repeat(${boardHeight}, ${cellSize})`;
     boardElement.innerHTML = '';
 
     for (let r = 0; r < boardHeight; r++) {
@@ -185,7 +184,6 @@ function renderBoard() {
 function playerMove(r, c) {
     if (!gameActive || currentPlayer !== 'black' || boardState[r][c]) return;
 
-    // 首次点击时尝试启动背景音乐（绕过浏览器自动播放限制）
     if (!isMusicPlaying && bgm) {
         randomizeBgmRate();
         toggleMusic();
@@ -210,7 +208,6 @@ function handleTurnLogic() {
 }
 
 function placeStone(r, c, color) {
-    // 每次落子前检测是否有被【泰裤辣】封锁的格子，如有则解除
     if (taikulaCells.length > 0) {
         taikulaCells.forEach(cell => {
             if (boardState[cell.r][cell.c] === 'disabled') boardState[cell.r][cell.c] = null;
@@ -256,13 +253,11 @@ function highlightCell(r, c, duration = 2000) {
     }
 }
 
-// --- 技能实现 (象棋乱入) ---
+// --- 技能实现 ---
 function skillXiangqi() {
     const r = Math.floor(Math.random() * boardHeight);
     const c = Math.floor(Math.random() * boardWidth);
-    const crossDirs = [[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1]]; // 中心+上下左右
-
-    // 1. 预震动反馈
+    const crossDirs = [[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1]];
     crossDirs.forEach(([dr, dc]) => {
         const nr = r + dr, nc = c + dc;
         if (isIn(nr, nc)) {
@@ -271,76 +266,48 @@ function skillXiangqi() {
             highlightCell(nr, nc, 1000);
         }
     });
-
-    // 2. 延迟爆破逻辑
     setTimeout(() => {
         crossDirs.forEach(([dr, dc]) => {
             const nr = r + dr, nc = c + dc;
-            if (isIn(nr, nc)) {
-                boardState[nr][nc] = null;
-            }
+            if (isIn(nr, nc)) boardState[nr][nc] = null;
         });
-        // 落下中立帅棋
         boardState[r][c] = { color: null, isXiangqi: true, text: '帥' };
         renderBoard();
-
         highlightCell(r, c, 1500);
-        console.log(`🧨 象棋乱入：坐标 (${r}, ${c}) 发生爆破，净化了周围十字区域`);
     }, 500);
 }
 
-// --- 技能实现 (反复横跳) ---
 function skillRift() {
     const stones = [];
-    for (let r = 0; r < boardHeight; r++) {
-        for (let c = 0; c < boardWidth; c++) {
-            if (boardState[r][c] && boardState[r][c] !== 'disabled') stones.push({ r, c, data: boardState[r][c] });
-        }
-    }
+    for (let r = 0; r < boardHeight; r++) for (let c = 0; c < boardWidth; c++) if (boardState[r][c] && boardState[r][c] !== 'disabled') stones.push({ r, c, data: boardState[r][c] });
     if (stones.length >= 2) {
         const idx1 = Math.floor(Math.random() * stones.length);
         let idx2; do { idx2 = Math.floor(Math.random() * stones.length); } while (idx1 === idx2);
         const s1 = stones[idx1], s2 = stones[idx2];
-
-        // 高亮互换双方
-        highlightCell(s1.r, s1.c, 2000);
-        highlightCell(s2.r, s2.c, 2000);
-
-        boardState[s1.r][s1.c] = s2.data;
-        boardState[s2.r][s2.c] = s1.data;
+        highlightCell(s1.r, s1.c, 2000); highlightCell(s2.r, s2.c, 2000);
+        boardState[s1.r][s1.c] = s2.data; boardState[s2.r][s2.c] = s1.data;
         renderBoard();
     }
 }
 
 function skillBlackHole() {
-    const count = 2 + Math.floor(Math.random() * 3); // 2-4个
+    const count = 2 + Math.floor(Math.random() * 3);
     let created = 0;
     for (let i = 0; i < 20 && created < count; i++) {
-        let r = Math.floor(Math.random() * boardHeight);
-        let c = Math.floor(Math.random() * boardWidth);
-        if (!boardState[r][c]) {
-            boardState[r][c] = { isBlackHole: true };
-            highlightCell(r, c, 2500);
-            created++;
-        }
+        let r = Math.floor(Math.random() * boardHeight), c = Math.floor(Math.random() * boardWidth);
+        if (!boardState[r][c]) { boardState[r][c] = { isBlackHole: true }; highlightCell(r, c, 2500); created++; }
     }
     renderBoard();
 }
 
 function skillRollback() {
-    // 强制倒流 4 手 (即两轮行动)
     const rollbackCount = Math.min(history.length, 4);
     if (rollbackCount > 0) {
         for (let i = 0; i < rollbackCount; i++) {
             const last = history.pop();
-            if (last) {
-                highlightCell(last.r, last.c, 1500); // 撤销处高亮
-                boardState[last.r][last.c] = null;
-                moveCounter--; // 同步步数
-            }
+            if (last) { highlightCell(last.r, last.c, 1500); boardState[last.r][last.c] = null; moveCounter--; }
         }
         renderBoard();
-        console.log(`⏳ 时空倒流：已成功回退 ${rollbackCount} 步`);
     } else {
         updateNarrator("系统提示：历史数据不足，时空倒流失败！", 'system');
     }
@@ -350,118 +317,67 @@ function skillShaqing() {
     const all = []; for (let r = 0; r < boardHeight; r++) for (let c = 0; c < boardWidth; c++) if (boardState[r][c] && boardState[r][c] !== 'disabled') all.push({ r, c });
     if (all.length > 0) {
         const t = all[Math.floor(Math.random() * all.length)];
-        highlightCell(t.r, t.c, 1500); // 消失前高亮
-        boardState[t.r][t.c] = null;
+        highlightCell(t.r, t.c, 1500); boardState[t.r][t.c] = null;
         renderBoard();
     }
 }
 
 function skillPiaoyi() {
-    // 随机选一颗场上的棋子
     const stones = [];
-    for (let r = 0; r < boardHeight; r++) {
-        for (let c = 0; c < boardWidth; c++) {
-            if (boardState[r][c] && boardState[r][c] !== 'disabled') stones.push({ r, c, data: boardState[r][c] });
-        }
-    }
-
+    for (let r = 0; r < boardHeight; r++) for (let c = 0; c < boardWidth; c++) if (boardState[r][c] && boardState[r][c] !== 'disabled') stones.push({ r, c, data: boardState[r][c] });
     if (stones.length > 0) {
         const stone = stones[Math.floor(Math.random() * stones.length)];
-        const dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]]; // 上下左右
-        // 随机打乱方向尝试
-        dirs.sort(() => Math.random() - 0.5);
-
+        const dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]].sort(() => Math.random() - 0.5);
         for (let [dr, dc] of dirs) {
             const nr = stone.r + dr, nc = stone.c + dc;
             if (isIn(nr, nc) && !boardState[nr][nc]) {
-                highlightCell(stone.r, stone.c, 1000); // 旧位置
-                highlightCell(nr, nc, 1000); // 新位置
-                boardState[nr][nc] = stone.data;
-                boardState[stone.r][stone.c] = null;
-                renderBoard();
-                console.log(`🏙️ 北漂生活：棋子从 (${stone.r},${stone.c}) 搬家到了 (${nr},${nc})`);
-                return;
+                highlightCell(stone.r, stone.c, 1000); highlightCell(nr, nc, 1000);
+                boardState[nr][nc] = stone.data; boardState[stone.r][stone.c] = null;
+                renderBoard(); return;
             }
         }
-        console.log("🏙️ 北漂生活：该棋子周围都挤满了人，搬家失败！");
     }
 }
+
 function skillZhenxiang() {
     const blacks = [];
-    for (let r = 0; r < boardHeight; r++) {
-        for (let c = 0; c < boardWidth; c++) {
-            if (getStoneColor(r, c) === 'black') {
-                blacks.push({ r, c });
-            }
-        }
-    }
-
+    for (let r = 0; r < boardHeight; r++) for (let c = 0; c < boardWidth; c++) if (getStoneColor(r, c) === 'black') blacks.push({ r, c });
     if (blacks.length > 0) {
         const target = blacks[Math.floor(Math.random() * blacks.length)];
-        highlightCell(target.r, target.c, 2000);
-        boardState[target.r][target.c] = 'white'; // 变节为白子
-        renderBoard();
-        console.log(`🥘 真香！坐标 (${target.r}, ${target.c}) 的黑子已投诚白色阵营`);
-    } else {
-        updateNarrator("张呈说：场上连一颗黑子都没有，我想真香都没机会啊！", 'system');
+        highlightCell(target.r, target.c, 2000); boardState[target.r][target.c] = 'white'; renderBoard();
     }
 }
 
 function skillTaikula() {
-    const r = Math.floor(Math.random() * boardHeight);
-    const c = Math.floor(Math.random() * boardWidth);
+    const r = Math.floor(Math.random() * boardHeight), c = Math.floor(Math.random() * boardWidth);
     taikulaCells = [];
-    for (let j = 0; j < boardWidth; j++) {
-        if (!boardState[r][j]) {
-            boardState[r][j] = 'disabled';
-            taikulaCells.push({ r, c: j });
-            highlightCell(r, j, 3000); // 冻结高亮
-        }
-    }
-    for (let i = 0; i < boardHeight; i++) {
-        if (!boardState[i][c]) {
-            boardState[i][c] = 'disabled';
-            taikulaCells.push({ r: i, c });
-            highlightCell(i, c, 3000); // 冻结高亮
-        }
-    }
+    for (let j = 0; j < boardWidth; j++) if (!boardState[r][j]) { boardState[r][j] = 'disabled'; taikulaCells.push({ r, c: j }); highlightCell(r, j, 3000); }
+    for (let i = 0; i < boardHeight; i++) if (!boardState[i][c]) { boardState[i][c] = 'disabled'; taikulaCells.push({ r: i, c }); highlightCell(i, c, 3000); }
     renderBoard();
 }
 
 function skillBoom() {
     let r = Math.floor(Math.random() * boardHeight), c = Math.floor(Math.random() * boardWidth);
     highlightCell(r, c, 1000);
-    // 1. 视觉：先让周围 5x5 的棋子震动
-    for (let i = -2; i <= 2; i++) {
-        for (let j = -2; j <= 2; j++) {
-            if (isIn(r + i, c + j)) {
-                const cell = document.querySelector(`.cell[data-row="${r + i}"][data-col="${c + j}"]`);
-                if (cell) cell.classList.add('shake-effect');
-                if (boardState[r + i][c + j]) highlightCell(r + i, c + j, 1000);
-            }
-        }
+    for (let i = -2; i <= 2; i++) for (let j = -2; j <= 2; j++) if (isIn(r + i, c + j)) {
+        const cell = document.querySelector(`.cell[data-row="${r + i}"][data-col="${c + j}"]`);
+        if (cell) cell.classList.add('shake-effect');
+        if (boardState[r + i][c + j]) highlightCell(r + i, c + j, 1000);
     }
-
-    // 2. 延迟爆炸：震动一下后再清理 3x3 核心区
     setTimeout(() => {
-        for (let i = -1; i <= 1; i++) {
-            for (let j = -1; j <= 1; j++) {
-                if (isIn(r + i, c + j)) boardState[r + i][c + j] = null;
-            }
-        }
+        for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) if (isIn(r + i, c + j)) boardState[r + i][c + j] = null;
         renderBoard();
-        // 棋盘本身也晃一下
         boardElement.classList.add('shake-effect');
         setTimeout(() => boardElement.classList.remove('shake-effect'), 500);
     }, 500);
 }
+
 function skillSwap() {
     let blacks = [], whites = [];
     for (let r = 0; r < boardHeight; r++) for (let c = 0; c < boardWidth; c++) { let co = getStoneColor(r, c); if (co === 'black') blacks.push({ r, c }); else if (co === 'white') whites.push({ r, c }); }
     if (blacks.length > 0 && whites.length > 0) {
         let b = blacks[Math.floor(Math.random() * blacks.length)], w = whites[Math.floor(Math.random() * whites.length)];
-        highlightCell(b.r, b.c, 2000);
-        highlightCell(w.r, w.c, 2000);
+        highlightCell(b.r, b.c, 2000); highlightCell(w.r, w.c, 2000);
         let t = boardState[b.r][b.c]; boardState[b.r][b.c] = boardState[w.r][w.c]; boardState[w.r][w.c] = t; renderBoard();
     }
 }
@@ -470,28 +386,20 @@ function skillSwap() {
 function aiMove() {
     if (!gameActive) return;
     updateNarrator("算力调度中...", 'system');
-
     setTimeout(() => {
         try {
             const bestMove = findBestWeightedMove();
-            if (bestMove) {
-                placeStone(bestMove.r, bestMove.c, 'white');
-                if (gameActive) { moveCounter++; handleTurnLogic(); }
-            }
-        } catch (e) { console.error(e); let rnd = randomMove(); if (rnd) placeStone(rnd.r, rnd.c, 'white'); switchTurn(); }
+            if (bestMove) { placeStone(bestMove.r, bestMove.c, 'white'); if (gameActive) { moveCounter++; handleTurnLogic(); } }
+        } catch (e) { let rnd = randomMove(); if (rnd) placeStone(rnd.r, rnd.c, 'white'); switchTurn(); }
     }, 600);
 }
 
 function findBestWeightedMove() {
     let bestScore = -1, bestMoves = [];
-    for (let r = 0; r < boardHeight; r++) {
-        for (let c = 0; c < boardWidth; c++) {
-            if (!boardState[r][c]) {
-                const score = calculateWeight(r, c);
-                if (score > bestScore) { bestScore = score; bestMoves = [{ r, c }]; }
-                else if (score === bestScore) { bestMoves.push({ r, c }); }
-            }
-        }
+    for (let r = 0; r < boardHeight; r++) for (let c = 0; c < boardWidth; c++) if (!boardState[r][c]) {
+        const score = calculateWeight(r, c);
+        if (score > bestScore) { bestScore = score; bestMoves = [{ r, c }]; }
+        else if (score === bestScore) { bestMoves.push({ r, c }); }
     }
     return bestMoves.length > 0 ? bestMoves[Math.floor(Math.random() * bestMoves.length)] : null;
 }
@@ -524,14 +432,12 @@ function analyzeDirection(row, col, dr, dc, color) {
 }
 
 function getStoneColor(r, c) {
-    const s = boardState[r][c];
-    if (!s || s === 'disabled') return null;
+    const s = boardState[r][c]; if (!s || s === 'disabled') return null;
     return typeof s === 'string' ? s : s.color;
 }
 
 function randomMove() {
-    const empty = [];
-    for (let r = 0; r < boardHeight; r++) for (let c = 0; c < boardWidth; c++) if (!boardState[r][c]) empty.push({ r, c });
+    const empty = []; for (let r = 0; r < boardHeight; r++) for (let c = 0; c < boardWidth; c++) if (!boardState[r][c]) empty.push({ r, c });
     return empty.length > 0 ? empty[Math.floor(Math.random() * empty.length)] : null;
 }
 
@@ -552,73 +458,78 @@ function isIn(r, c) { return r >= 0 && r < boardHeight && c >= 0 && c < boardWid
 
 function gameWin(color) {
     gameActive = false;
-
-    // 1. 停止 BGM
-    if (bgm) {
-        bgm.pause();
-        bgm.currentTime = 0;
-        isMusicPlaying = false;
-        bgmBtn.textContent = '🎵 开启音乐';
-    }
-
+    if (bgm) { bgm.pause(); bgm.currentTime = 0; isMusicPlaying = false; bgmBtn.textContent = '🎵 开启音乐'; }
     const isPlayerWin = (color === 'black');
-    if (isPlayerWin) {
-        triggerWinVFX();
-    } else {
-        triggerLossVFX();
-    }
-
-    const msg = isPlayerWin ? "恭喜你！子祺获胜了！这局简直是张呈解说的巅峰制作。" : "遗憾！技能五获胜了，去领盒饭吧。";
+    if (isPlayerWin) triggerWinVFX(); else triggerLossVFX();
+    const msg = isPlayerWin ? "恭喜你！子祺获胜了！" : "遗憾！技能五获胜了。";
     updateNarrator("🏆 结局：" + msg, 'system');
-
-    // 2. 引导用户手动重开
-    setTimeout(() => {
-        updateNarrator("🎬 剧场暂告一段落。请点击左侧【重新开局】开始下一场大戏！", 'system');
-    }, 1500);
 }
 
 function triggerWinVFX() {
     const layer = document.getElementById('vfx-layer') || createVFXLayer();
-    for (let i = 0; i < 100; i++) {
-        setTimeout(() => {
-            const confetti = document.createElement('div');
-            confetti.classList.add('confetti');
-            confetti.style.left = Math.random() * 100 + 'vw';
-            confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 70%, 50%)`;
-            confetti.style.width = (Math.random() * 8 + 5) + 'px';
-            confetti.style.height = (Math.random() * 15 + 5) + 'px';
-            layer.appendChild(confetti);
-            setTimeout(() => confetti.remove(), 3000);
-        }, i * 20);
-    }
+    for (let i = 0; i < 100; i++) setTimeout(() => {
+        const confetti = document.createElement('div');
+        confetti.classList.add('confetti');
+        confetti.style.left = Math.random() * 100 + 'vw';
+        confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 70%, 50%)`;
+        confetti.style.width = (Math.random() * 8 + 5) + 'px';
+        confetti.style.height = (Math.random() * 15 + 5) + 'px';
+        layer.appendChild(confetti);
+        setTimeout(() => confetti.remove(), 3000);
+    }, i * 20);
 }
 
 function triggerLossVFX() {
     const layer = document.getElementById('vfx-layer') || createVFXLayer();
-    for (let i = 0; i < 50; i++) {
-        setTimeout(() => {
-            const smoke = document.createElement('div');
-            smoke.classList.add('smoke-particle');
-            smoke.style.left = Math.random() * 100 + 'vw';
-            smoke.style.top = '100vh';
-            layer.appendChild(smoke);
-            setTimeout(() => smoke.remove(), 4000);
-        }, i * 100);
-    }
+    for (let i = 0; i < 50; i++) setTimeout(() => {
+        const smoke = document.createElement('div');
+        smoke.classList.add('smoke-particle');
+        smoke.style.left = Math.random() * 100 + 'vw'; smoke.style.top = '100vh';
+        layer.appendChild(smoke);
+        setTimeout(() => smoke.remove(), 4000);
+    }, i * 100);
 }
 
 function createVFXLayer() {
-    const div = document.createElement('div');
-    div.id = 'vfx-layer';
-    document.body.appendChild(div);
-    return div;
+    const div = document.createElement('div'); div.id = 'vfx-layer';
+    document.body.appendChild(div); return div;
 }
 
-function resetGame() {
-    gameActive = true; currentPlayer = 'black';
-    initGame();
+// --- 手机端适配与全屏控制 ---
+function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => alert(`无法进入全屏: ${err.message}`));
+        if (fullscreenBtn) fullscreenBtn.textContent = '退出全屏';
+    } else {
+        if (document.exitFullscreen) { document.exitFullscreen(); if (fullscreenBtn) fullscreenBtn.textContent = '📺 全屏模式'; }
+    }
 }
 
-document.getElementById('restart-btn').addEventListener('click', resetGame);
-bgmBtn.addEventListener('click', toggleMusic);
+function updateBoardScale() {
+    const area = document.querySelector('.board-area');
+    if (!area) return;
+    const vWidth = area.clientWidth, vHeight = area.clientHeight;
+    const padding = 30;
+    const availableW = vWidth - padding, availableH = vHeight - padding;
+    const sizeW = Math.floor(availableW / boardWidth), sizeH = Math.floor(availableH / boardHeight);
+    const cellSize = Math.max(15, Math.min(sizeW, sizeH, 40));
+    document.documentElement.style.setProperty('--cell-size', `${cellSize}px`);
+    if (boardElement) {
+        boardElement.style.gridTemplateColumns = `repeat(${boardWidth}, ${cellSize}px)`;
+        boardElement.style.gridTemplateRows = `repeat(${boardHeight}, ${cellSize}px)`;
+    }
+}
+
+window.addEventListener('resize', updateBoardScale);
+if (fullscreenBtn) fullscreenBtn.addEventListener('click', toggleFullscreen);
+document.addEventListener('fullscreenchange', () => {
+    if (!document.fullscreenElement && fullscreenBtn) fullscreenBtn.textContent = '📺 全屏模式';
+    setTimeout(updateBoardScale, 100);
+});
+window.addEventListener('load', updateBoardScale);
+
+if (document.getElementById('restart-btn')) document.getElementById('restart-btn').addEventListener('click', resetGame);
+if (bgmBtn) bgmBtn.addEventListener('click', toggleMusic);
+
 initGame();
+setTimeout(updateBoardScale, 100);
