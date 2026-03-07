@@ -16,7 +16,6 @@ const playerJinengwu = document.getElementById('player-jinengwu');
 const modal = document.getElementById('modal');
 const bgm = document.getElementById('bgm');
 const bgmBtn = document.getElementById('bgm-btn');
-const fullscreenBtn = document.getElementById('fullscreen-btn');
 
 let isMusicPlaying = true; // 默认开启
 let taikulaCells = []; // 记录被泰裤辣冻结的坐标
@@ -124,7 +123,7 @@ function initGame() {
     history = [];
     moveCounter = 0;
     renderBoard();
-    updateNarrator("《技能五子棋》15x15 经典版开拍！", 'system');
+    updateNarrator("《技能五子棋》15x15 经典版开幕！", 'system');
     autoPlayCheck();
 }
 
@@ -495,16 +494,7 @@ function createVFXLayer() {
     document.body.appendChild(div); return div;
 }
 
-// --- 手机端适配与全屏控制 ---
-function toggleFullscreen() {
-    if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(err => alert(`无法进入全屏: ${err.message}`));
-        if (fullscreenBtn) fullscreenBtn.textContent = '退出全屏';
-    } else {
-        if (document.exitFullscreen) { document.exitFullscreen(); if (fullscreenBtn) fullscreenBtn.textContent = '📺 全屏模式'; }
-    }
-}
-
+// --- 适配布局与一屏自适应逻辑 ---
 function updateBoardScale() {
     const area = document.querySelector('.board-area');
     if (!area) return;
@@ -512,22 +502,27 @@ function updateBoardScale() {
     const vWidth = area.clientWidth;
     const vHeight = area.clientHeight;
 
-    // 根据屏幕宽度判断是否为移动端，从而动态调整 padding 预留空间
-    const innerPadding = window.innerWidth <= 600 ? 10 : 30;
-    const topOffset = window.innerWidth <= 600 ? 60 : 0; // 移动端顶部按钮高度
-    const bottomOffset = window.innerWidth <= 600 ? 130 : 0; // 移动端底部玩家+日志空间
+    // 区分移动端与 PC 端
+    const isMobile = window.innerWidth <= 900;
 
-    const availableW = vWidth - innerPadding * 2;
-    const availableH = vHeight - innerPadding * 2 - topOffset - bottomOffset;
+    // 手机端：顶部按钮 (60px) + 底部日志高度空间 (160px 左右)
+    // PC 端：主要依靠 flex 布局，但为了保证“一屏”，需要抵扣页面其余固定元素的像素高度
+    const topOffset = isMobile ? 70 : 100; // 各种 Header/Buttons
+    const bottomOffset = isMobile ? 180 : 80; // 底部玩家/日志
+    const horizontalPadding = isMobile ? 20 : 40;
+
+    const availableW = vWidth - horizontalPadding;
+    const availableH = vHeight - topOffset - bottomOffset;
 
     const sizeW = Math.floor(availableW / boardWidth);
     const sizeH = Math.floor(availableH / boardHeight);
 
-    const cellSize = Math.max(15, Math.min(sizeW, sizeH, 40));
+    // 最大不超过 45px (PC) 或适配屏幕的最大值
+    const maxPixel = isMobile ? 40 : 45;
+    const cellSize = Math.max(15, Math.min(sizeW, sizeH, maxPixel));
 
     document.documentElement.style.setProperty('--cell-size', `${cellSize}px`);
 
-    // 棋盘偏移修正 (如果需要，可以通过 translate 微调，但 padding 已处理)
     if (boardElement) {
         boardElement.style.gridTemplateColumns = `repeat(${boardWidth}, ${cellSize}px)`;
         boardElement.style.gridTemplateRows = `repeat(${boardHeight}, ${cellSize}px)`;
@@ -535,11 +530,6 @@ function updateBoardScale() {
 }
 
 window.addEventListener('resize', updateBoardScale);
-if (fullscreenBtn) fullscreenBtn.addEventListener('click', toggleFullscreen);
-document.addEventListener('fullscreenchange', () => {
-    if (!document.fullscreenElement && fullscreenBtn) fullscreenBtn.textContent = '📺 全屏模式';
-    setTimeout(updateBoardScale, 100);
-});
 window.addEventListener('load', updateBoardScale);
 
 if (document.getElementById('restart-btn')) document.getElementById('restart-btn').addEventListener('click', resetGame);
