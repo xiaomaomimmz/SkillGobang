@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>技能五子棋 - 子祺 vs 技能五</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="game-wrapper">
+        <header>
+            <div class="narrator-box" id="narrator">
+                <span class="narrator-name">旁白君:</span>
+                <span class="narrator-text" id="narrator-text">欢迎来到《技能五子棋》，子祺加油！</span>
+            </div>
+            <div class="player-info">
+                <div class="player black active" id="player-ziqi">
+                    <div class="avatar">子</div>
+                    <span>子祺 (黑)</span>
+                </div>
+                <div class="vs">VS</div>
+                <div class="player white" id="player-jinengwu">
+                    <div class="avatar">五</div>
+                    <span>技能五 (白)</span>
+                </div>
+            </div>
+        </header>
+
+        <main id="game-main">
+            <div id="board-viewport" class="board-viewport">
+                <div id="board-container" class="board-container">
+                    <div id="board" class="board"></div>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <div class="game-stats">
+                <span>当前关卡: <b id="level-display">1</b></span>
+                <span>棋盘尺寸: <b id="size-display">15x10</b></span>
+            </div>
+            <div class="controls">
+                <button id="restart-btn" class="btn">重开</button>
+                <button id="undo-btn" class="btn secondary">悔棋</button>
+            </div>
+        </footer>
+    </div>
+
+    <!-- 技能触发特效层 -->
+    <div id="fx-layer" class="fx-layer"></div>
+
+    <!-- 胜利弹窗 -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <h2 id="winner-text">你赢了，子祺！</h2>
+            <p id="next-level-msg">准备好应对更长的棋盘了吗？</p>
+            <button id="modal-next" class="btn">进入下一关</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

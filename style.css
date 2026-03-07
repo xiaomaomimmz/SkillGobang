@@ -1,0 +1,305 @@
+:root {
+    --bg-color: #020617;
+    --board-wood: #1e1b18;
+    /* 深色木纹背景 */
+    --grid-color: rgba(255, 215, 0, 0.4);
+    --accent-color: #fbbf24;
+    --text-color: #f8fafc;
+    --black-stone: radial-gradient(circle at 30% 30%, #4b5563, #000);
+    --white-stone: radial-gradient(circle at 30% 30%, #fff, #94a3b8);
+    --glass-bg: rgba(255, 255, 255, 0.03);
+    --glass-border: rgba(255, 255, 255, 0.1);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+
+body {
+    background-color: var(--bg-color);
+    background-image:
+        radial-gradient(circle at 20% 30%, rgba(251, 191, 36, 0.05) 0%, transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(56, 189, 248, 0.05) 0%, transparent 50%);
+    color: var(--text-color);
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.game-wrapper {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 600px;
+    height: 100%;
+    padding: 1rem;
+    gap: 1rem;
+}
+
+header {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.narrator-box {
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid var(--accent-color);
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-style: italic;
+    min-height: 3.5rem;
+    box-shadow: 0 0 15px rgba(251, 191, 36, 0.1);
+    display: flex;
+    align-items: center;
+}
+
+.narrator-name {
+    color: var(--accent-color);
+    font-weight: bold;
+    margin-right: 0.5rem;
+    white-space: nowrap;
+}
+
+.player-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 1rem;
+}
+
+.player {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    opacity: 0.5;
+    transition: all 0.3s;
+}
+
+.player.active {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.player .avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.player.black .avatar {
+    background: var(--black-stone);
+    color: white;
+}
+
+.player.white .avatar {
+    background: var(--white-stone);
+    color: black;
+}
+
+.player.active .avatar {
+    border: 2px solid var(--accent-color);
+    box-shadow: 0 0 15px var(--accent-color);
+}
+
+.vs {
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: #64748b;
+}
+
+/* 棋盘区域 - 修复对齐 */
+.board-viewport {
+    flex: 1;
+    overflow-y: auto;
+    background: #111;
+    border: 4px solid #333;
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    padding: 36px 0;
+    /* 给半个格子留空 */
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent-color) transparent;
+}
+
+.board-container {
+    position: relative;
+    background-color: var(--board-wood);
+}
+
+.board {
+    display: grid;
+    position: relative;
+    /* 网格线由单元格绘制 */
+}
+
+.cell {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    position: relative;
+}
+
+/* 绘制交叉线 */
+.cell::before,
+.cell::after {
+    content: '';
+    position: absolute;
+    background-color: var(--grid-color);
+    z-index: 1;
+}
+
+/* 横线 */
+.cell::before {
+    width: 100%;
+    height: 1px;
+    top: 50%;
+    left: 0;
+}
+
+/* 纵线 */
+.cell::after {
+    width: 1px;
+    height: 100%;
+    left: 50%;
+    top: 0;
+}
+
+/* 边缘线处理：让线条不要超出棋盘边缘（可选优化，目前全显也有某种风格） */
+
+.cell:hover {
+    background-color: rgba(251, 191, 36, 0.1);
+}
+
+.stone {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    z-index: 5;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6);
+    position: relative;
+}
+
+.stone.black {
+    background: var(--black-stone);
+}
+
+.stone.white {
+    background: var(--white-stone);
+}
+
+/* 技能动效 */
+.animate-spawn {
+    animation: spawn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes spawn {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.skill-visual-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 2000;
+    display: none;
+}
+
+/* 凡尔赛金色滤镜 */
+.fensai-mode {
+    filter: sepia(0.5) brightness(1.2) contrast(1.2);
+}
+
+/* 雾蒙蒙效果 */
+.fog-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, transparent 20%, rgba(255, 255, 255, 0.4) 80%);
+    z-index: 10;
+    pointer-events: none;
+    display: none;
+}
+
+footer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding-bottom: 1rem;
+}
+
+.game-stats {
+    display: flex;
+    justify-content: space-around;
+    font-size: 0.9rem;
+    color: #94a3b8;
+}
+
+.controls {
+    display: flex;
+    gap: 1rem;
+}
+
+.btn {
+    flex: 1;
+    padding: 0.75rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    background: var(--accent-color);
+    color: #000;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(251, 191, 36, 0.3);
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: #1e293b;
+    padding: 2.5rem;
+    border-radius: 16px;
+    text-align: center;
+    border: 2px solid var(--accent-color);
+}
