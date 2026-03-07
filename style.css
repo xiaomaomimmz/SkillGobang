@@ -69,22 +69,8 @@ body {
     .side-panel {
         width: 100%;
         height: auto;
-        flex-direction: row;
-        justify-content: space-around;
-        align-items: center;
-        flex-shrink: 0;
-    }
-
-    .left-panel {
-        order: 2;
-    }
-
-    .board-area {
-        order: 1;
-    }
-
-    .right-panel {
-        order: 3;
+        display: contents;
+        /* 手机端让子项直接参与 main-layout 的 flex/grid 布局 */
     }
 }
 
@@ -232,8 +218,8 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 0;
-    /* 允许 flex item 在高度不足时缩小，防止挤占 */
     width: 100%;
+    z-index: 10;
 }
 
 .board-viewport {
@@ -539,48 +525,130 @@ body {
 }
 
 /* --- 特殊 UI 隐藏与适配 --- */
+/* --- 手机端竖屏定制布局 (强制竖屏风格) --- */
 @media screen and (max-width: 600px) {
+    /* 锁定横屏显示提示 */
+    @media screen and (orientation: landscape) {
+        body::after {
+            content: "🔄 请竖屏游玩以获得最佳体验";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #000;
+            z-index: 99999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+    }
 
-    .player-tag,
-    .stats-card {
+    .main-layout {
+        flex-direction: column;
+        padding: 10px;
+        position: relative;
+    }
+
+    /* 1. 按钮在上 */
+    .left-panel .controls-vertical {
+        position: fixed;
+        top: 10px;
+        left: 0;
+        width: 100vw;
+        flex-direction: row;
+        justify-content: center;
+        gap: 10px;
+        z-index: 100;
+        padding: 0 10px;
+    }
+
+    .left-panel .controls-vertical .btn {
+        flex: 1;
+        padding: 8px;
+        font-size: 0.8rem;
+        max-width: 120px;
+    }
+
+    /* 隐藏不需要的元素 */
+    .left-panel .stats-card,
+    .player-tag {
         display: none;
     }
 
-    .player {
-        padding: 5px 10px;
+    /* 2. 玩家在左下 */
+    .left-panel .player,
+    .right-panel .player {
+        position: fixed;
+        bottom: 10px;
+        left: 10px;
+        width: auto;
+        padding: 8px 12px;
+        flex-direction: row;
+        gap: 10px;
+        opacity: 0.9;
+        z-index: 100;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(5px);
     }
 
+    /* 两个玩家信息叠放或并列，这里选择左下角叠放/并列显示 */
+    .left-panel .player {
+        bottom: 65px;
+    }
+
+    /* 子祺在上 */
+    .right-panel .player {
+        bottom: 10px;
+    }
+
+    /* 技能五在下 */
+
     .avatar {
-        width: 35px;
-        height: 35px;
+        width: 30px;
+        height: 30px;
         font-size: 1rem;
     }
 
-    .controls-vertical {
-        flex-direction: row;
-        gap: 5px;
+    .player-name {
+        font-size: 0.9rem;
     }
 
-    .btn {
-        padding: 8px;
-        font-size: 0.8rem;
-    }
-
+    /* 3. 日志在右下 (弹幕/小窗模式) */
     .narrator-log-wrapper {
         position: fixed;
         bottom: 10px;
         right: 10px;
-        width: 180px;
-        max-height: 25vh;
-        height: auto;
+        width: 160px;
+        height: 120px;
+        max-height: 30vh;
+        z-index: 90;
         opacity: 0.8;
-        z-index: 100;
-        pointer-events: none;
-        /* 穿透点击以免挡住棋盘 */
+        pointer-events: auto;
+        /* 允许滚动 */
     }
 
     .narrator-log-wrapper h3 {
-        display: none;
+        font-size: 0.7rem;
+        padding: 5px;
+    }
+
+    .narrator-log {
+        padding: 5px;
+        gap: 5px;
+    }
+
+    .log-entry {
+        font-size: 0.7rem;
+        padding: 4px;
+    }
+
+    /* 棋盘区域留出空间 */
+    .board-area {
+        padding-top: 50px;
+        padding-bottom: 120px;
     }
 }
 

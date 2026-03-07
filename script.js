@@ -508,12 +508,26 @@ function toggleFullscreen() {
 function updateBoardScale() {
     const area = document.querySelector('.board-area');
     if (!area) return;
-    const vWidth = area.clientWidth, vHeight = area.clientHeight;
-    const padding = 30;
-    const availableW = vWidth - padding, availableH = vHeight - padding;
-    const sizeW = Math.floor(availableW / boardWidth), sizeH = Math.floor(availableH / boardHeight);
+
+    const vWidth = area.clientWidth;
+    const vHeight = area.clientHeight;
+
+    // 根据屏幕宽度判断是否为移动端，从而动态调整 padding 预留空间
+    const innerPadding = window.innerWidth <= 600 ? 10 : 30;
+    const topOffset = window.innerWidth <= 600 ? 60 : 0; // 移动端顶部按钮高度
+    const bottomOffset = window.innerWidth <= 600 ? 130 : 0; // 移动端底部玩家+日志空间
+
+    const availableW = vWidth - innerPadding * 2;
+    const availableH = vHeight - innerPadding * 2 - topOffset - bottomOffset;
+
+    const sizeW = Math.floor(availableW / boardWidth);
+    const sizeH = Math.floor(availableH / boardHeight);
+
     const cellSize = Math.max(15, Math.min(sizeW, sizeH, 40));
+
     document.documentElement.style.setProperty('--cell-size', `${cellSize}px`);
+
+    // 棋盘偏移修正 (如果需要，可以通过 translate 微调，但 padding 已处理)
     if (boardElement) {
         boardElement.style.gridTemplateColumns = `repeat(${boardWidth}, ${cellSize}px)`;
         boardElement.style.gridTemplateRows = `repeat(${boardHeight}, ${cellSize}px)`;
