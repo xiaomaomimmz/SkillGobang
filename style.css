@@ -311,6 +311,61 @@ body {
     font-weight: bold;
     font-size: 20px;
     box-shadow: 0 0 15px rgba(194, 65, 12, 0.5);
+    border-radius: 50%;
+}
+
+/* 国际象棋皇后 */
+.stone.queen-piece {
+    background: #4338ca;
+    border: 2px solid #e0e7ff;
+    color: #e0e7ff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
+    box-shadow: 0 0 20px #4338ca;
+}
+
+/* 日本将棋：成金 */
+.stone.gold-pawn {
+    background: linear-gradient(135deg, #fbbf24, #b45309);
+    border: 3px solid #fff;
+    box-shadow: 0 0 15px #fbbf24;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: 900;
+}
+
+/* 用边缘色区分原有的黑白阵营 */
+.stone.gold-pawn-black {
+    border-color: #000;
+    box-shadow: 0 0 15px #fbbf24, inset 0 0 5px #000;
+}
+
+.stone.gold-pawn-white {
+    border-color: #fff;
+    box-shadow: 0 0 15px #fbbf24, inset 0 0 5px #fff;
+}
+
+/* 军棋：地雷 */
+.stone.landmine {
+    background: #1f2937;
+    border: 1px dashed #ef4444;
+    opacity: 0.6;
+}
+
+/* 冰球：Puck */
+.puck-vfx {
+    width: 20px;
+    height: 20px;
+    background: #000;
+    border: 2px solid #fff;
+    border-radius: 4px;
+    position: absolute;
+    z-index: 100;
+    box-shadow: 0 0 10px #fff;
 }
 
 /* 辅助卡片 */
@@ -346,6 +401,205 @@ body {
 .btn.secondary {
     background: #334155;
     color: white;
+}
+
+/* 重启按钮引导提示 */
+.btn-prompt-glow {
+    animation: btn-glow-pulse 1.2s ease-in-out infinite !important;
+    position: relative;
+    border: 2px solid white !important;
+    color: #000 !important;
+    font-weight: 900 !important;
+}
+
+@keyframes btn-glow-pulse {
+    0% {
+        box-shadow: inset 0 0 0px rgba(255, 255, 255, 0), 0 0 0px rgba(255, 255, 255, 0);
+    }
+
+    50% {
+        box-shadow: inset 0 0 25px rgba(255, 255, 255, 0.9), 0 0 20px var(--accent-color);
+        filter: brightness(1.3);
+    }
+
+    100% {
+        box-shadow: inset 0 0 0px rgba(255, 255, 255, 0), 0 0 0px rgba(255, 255, 255, 0);
+    }
+}
+
+/* 外挂技能全屏闪字特效 (动态系统) */
+.skill-overlay-text {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 5rem;
+    font-weight: 900;
+    font-style: italic;
+    color: var(--skill-color, #ff3366);
+    text-shadow:
+        0 0 10px var(--skill-color, #ff3366),
+        0 0 20px var(--skill-glow, #ff0000),
+        0 0 40px var(--skill-glow, #ff0000),
+        3px 3px 0 #000;
+    pointer-events: none;
+    z-index: 9999;
+    white-space: nowrap;
+    opacity: 0;
+    animation: var(--skill-anim, skill-anim-zoom) 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* 1. Zoom (经典爆发放大) */
+@keyframes skill-anim-zoom {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.1) rotate(-15deg);
+    }
+
+    30% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.2) rotate(5deg);
+    }
+
+    50% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1) rotate(0deg);
+        text-shadow: 0 0 30px var(--skill-color), 0 0 60px #fff;
+    }
+
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(2) rotate(10deg);
+    }
+}
+
+/* 2. Slide (横扫全军) */
+@keyframes skill-anim-slide {
+    0% {
+        opacity: 0;
+        transform: translate(-150%, -50%) skew(-30deg);
+    }
+
+    20% {
+        opacity: 1;
+        transform: translate(-50%, -50%) skew(10deg);
+        text-shadow: 0 0 40px var(--skill-color);
+    }
+
+    80% {
+        opacity: 1;
+        transform: translate(-40%, -50%) skew(0deg);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translate(150%, -50%) skew(30deg);
+    }
+}
+
+/* 3. Drop (从天而将重击) */
+@keyframes skill-anim-drop {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -200%) scale(1.5);
+    }
+
+    15% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(0.8);
+    }
+
+    25% {
+        transform: translate(-50%, -60%) scale(1.1);
+    }
+
+    35% {
+        transform: translate(-50%, -50%) scale(1);
+        text-shadow: 0 0 50px var(--skill-glow), 0 0 80px #fff;
+    }
+
+    100% {
+        opacity: 0;
+        transform: translate(-50%, 100%) scale(0.5);
+    }
+}
+
+/* 4. Shake (高危震荡警告) */
+@keyframes skill-anim-shake {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(2);
+    }
+
+    10% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+
+    15% {
+        transform: translate(-52%, -48%);
+        text-shadow: 0 0 50px var(--skill-color);
+    }
+
+    20% {
+        transform: translate(-48%, -52%);
+    }
+
+    25% {
+        transform: translate(-52%, -52%);
+    }
+
+    30% {
+        transform: translate(-48%, -48%);
+    }
+
+    80% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(1.5);
+    }
+}
+
+/* 5. Glitch (赛博故障空间错乱) */
+@keyframes skill-anim-glitch {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.8);
+    }
+
+    10% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+        text-shadow: 10px 0 0 red, -10px 0 0 cyan;
+    }
+
+    15% {
+        transform: translate(-55%, -50%);
+        text-shadow: -10px 0 0 red, 10px 0 0 cyan;
+    }
+
+    20% {
+        transform: translate(-45%, -50%);
+    }
+
+    25% {
+        transform: translate(-50%, -45%);
+        text-shadow: 5px 5px 0 red, -5px -5px 0 cyan;
+    }
+
+    50% {
+        transform: translate(-50%, -50%);
+        text-shadow: 0 0 10px var(--skill-glow);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(1.1);
+    }
 }
 
 .modal {
@@ -475,8 +729,8 @@ body {
 
 /* 螺旋黑洞视觉 */
 .black-hole {
-    width: 32px;
-    height: 32px;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
     background: radial-gradient(circle, #000 40%, transparent 100%);
     position: absolute;
@@ -484,7 +738,7 @@ body {
     left: 50%;
     transform: translate(-50%, -50%);
     overflow: hidden;
-    box-shadow: 0 0 15px #000, 0 0 5px var(--accent-color);
+    box-shadow: 0 0 10px #000, 0 0 4px var(--accent-color);
     z-index: 8;
     animation: bh-pulse 2s ease-in-out infinite;
 }
@@ -519,7 +773,7 @@ body {
     }
 
     50% {
-        transform: translate(-50%, -50%) scale(1.2);
+        transform: translate(-50%, -50%) scale(1.1);
     }
 }
 
@@ -641,6 +895,108 @@ body {
         height: 100%;
         width: 100%;
     }
+}
+
+/* --- 新技能专用动画 --- */
+@keyframes basketball-bounce {
+    0% {
+        transform: scale(1.5) translateY(0);
+    }
+
+    25% {
+        transform: scale(1.2) translateY(-100px);
+    }
+
+    50% {
+        transform: scale(1.5) translateY(0);
+    }
+
+    75% {
+        transform: scale(1.2) translateY(-100px);
+    }
+
+    100% {
+        transform: scale(1.5) translateY(0);
+    }
+}
+
+.basketball-vfx {
+    width: 40px;
+    height: 40px;
+    background: radial-gradient(circle at 30% 30%, #f97316, #9a3412);
+    border-radius: 50%;
+    border: 2px solid #000;
+    position: absolute;
+    z-index: 1000;
+    box-shadow: 0 0 20px #f97316;
+}
+
+.basketball-vfx::after {
+    content: '🏀';
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    font-size: 24px;
+}
+
+.ripple-vfx {
+    position: absolute;
+    border: 2px solid var(--accent-color);
+    border-radius: 50%;
+    animation: ripple-out 1s ease-out forwards;
+    pointer-events: none;
+    z-index: 50;
+}
+
+@keyframes ripple-out {
+    0% {
+        width: 0;
+        height: 0;
+        opacity: 1;
+    }
+
+    100% {
+        width: 300px;
+        height: 300px;
+        opacity: 0;
+        transform: translate(-50%, -50%);
+    }
+}
+
+.glitch-effect {
+    animation: glitch 0.2s linear infinite;
+}
+
+@keyframes glitch {
+    0% {
+        transform: translate(2px, 0);
+        filter: hue-rotate(90deg);
+    }
+
+    25% {
+        transform: translate(-2px, 2px);
+    }
+
+    50% {
+        transform: translate(2px, -2px);
+        filter: hue-rotate(180deg);
+    }
+
+    75% {
+        transform: translate(-2px, -2px);
+    }
+
+    100% {
+        transform: translate(0, 0);
+    }
+}
+
+.shuttlecock-vfx {
+    font-size: 30px;
+    position: absolute;
+    z-index: 1000;
+    transition: all 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.28);
 }
 
 /* 棋盘垂直缩放策略 */
